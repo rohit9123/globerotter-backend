@@ -52,54 +52,39 @@ router.get('/questions', protect, async (req, res) => {
 // Route to check user answers
 router.post('/check-answers', protect, async (req, res) => {
   try {
-    const { id, answer } = req.body; // Single answer object: { id, answer }
-
-    // Fetch the question from the database using the provided ID
-    const question = await Question.findOne({ id });
-
-    if (!question) {
-      return res.status(404).json({ message: 'Question not found' });
+    // Validate request
+    if (!req.body.id || !req.body.answer) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Missing question ID or answer' 
+      });
     }
 
-    // Check if the user's answer matches the correct answer
-    const isCorrect = question.correct === answer;
+    // Find question
+    const question = await Question.findById(req.body.id);
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'Question not found'
+      });
+    }
 
-    // Send the response immediately
+    // Validate answer
+    const isCorrect = question.correctAnswer === req.body.answer;
+    
     res.json({
+      success: true,
       correct: isCorrect,
-      fact: question.fact, // Include the fun fact
-    });
-
-    // Perform leaderboard update in the background
-    setImmediate(async () => {
-      try {
-        const userId = new mongoose.Types.ObjectId(req.user._id);
-        const existingLeaderboard = await Leaderboard.findOne({ userId });
-
-        if (!existingLeaderboard) {
-          await Leaderboard.create({ userId, username: req.user.username });
-        }
-
-        await Leaderboard.updateOne(
-          { userId },
-          {
-            $inc: {
-              questionsAttempted: 1,
-              correctAnswers: isCorrect ? 1 : 0,
-              wrongAnswers: isCorrect ? 0 : 1,
-              score: isCorrect ? 10 : 0,
-            },
-          },
-          { upsert: true }
-        ).exec();
-      } catch (err) {
-        console.error('Error updating leaderboard:', err);
-      }
+      fact: question.fact
     });
 
   } catch (error) {
-    console.error('Error checking answer:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Check answer error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during answer verification',
+      error: process.env.NODE_ENV === 'production' ? undefined : error.message
+    });
   }
 });
 
