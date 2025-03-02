@@ -10,41 +10,25 @@ const mongoose = require('mongoose');
 
 router.get('/questions', protect, async (req, res) => {
   try {
-    // Fisher-Yates shuffle function (pure function)
-    const shuffleArray = (array) => {
-      const shuffled = [...array]; // Create copy
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      return shuffled;
-    };
+    // Fisher-Yates shuffle function
+    
+    // Fetch 10 random questions
+    const questions = await Question.aggregate([{ $sample: { size: 10 } }]);
 
-    // Get 10 random questions without answers
-    const questions = await Question.aggregate([
-      { $sample: { size: 10 } },
-      { $project: { 
-        clues: 1,
-        options: 1,
-        _id: 1 
-      }}
-    ]);
-
-    // Process questions without modifying database
-    const randomizedQuestions = questions.map(question => ({
+    // Process questions with shuffled clues
+    const questionsWithoutAnswers = questions.map((question) => ({
       id: question._id,
-      clues: question.clues, // Shuffle clues copy
-      options: shuffleArray(question.options) // Shuffle options copy
+      clues: question.clues, // Shuffle the clues array
+      options: question.options
     }));
 
-    res.json(randomizedQuestions);
+    res.json(questionsWithoutAnswers);
     
   } catch (error) {
     console.error('Error fetching questions:', error);
     res.status(500).json({ 
-      success: false,
-      message: 'Failed to load questions',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'Error fetching questions',
+      error: error.message 
     });
   }
 });
@@ -52,39 +36,54 @@ router.get('/questions', protect, async (req, res) => {
 // Route to check user answers
 router.post('/check-answers', protect, async (req, res) => {
   try {
-    // Validate request
-    if (!req.body.id || !req.body.answer) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Missing question ID or answer' 
-      });
-    }
+    const { id, answer } = req.body; // Single answer object: { id, answer }
 
-    // Find question
-    const question = await Question.findById(req.body.id);
+    // Fetch the question from the database using the provided ID
+    const question = await Question.findOne({ id });
+
     if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Question not found'
-      });
+      return res.status(404).json({ message: 'Question not found' });
     }
 
-    // Validate answer
-    const isCorrect = question.correctAnswer === req.body.answer;
-    
+    // Check if the user's answer matches the correct answer
+    const isCorrect = question.correct === answer;
+
+    // Send the response immediately
     res.json({
-      success: true,
       correct: isCorrect,
-      fact: question.fact
+      fact: question.fact, // Include the fun fact
+    });
+
+    // Perform leaderboard update in the background
+    setImmediate(async () => {
+      try {
+        const userId = new mongoose.Types.ObjectId(req.user._id);
+        const existingLeaderboard = await Leaderboard.findOne({ userId });
+
+        if (!existingLeaderboard) {
+          await Leaderboard.create({ userId, username: req.user.username });
+        }
+
+        await Leaderboard.updateOne(
+          { userId },
+          {
+            $inc: {
+              questionsAttempted: 1,
+              correctAnswers: isCorrect ? 1 : 0,
+              wrongAnswers: isCorrect ? 0 : 1,
+              score: isCorrect ? 10 : 0,
+            },
+          },
+          { upsert: true }
+        ).exec();
+      } catch (err) {
+        console.error('Error updating leaderboard:', err);
+      }
     });
 
   } catch (error) {
-    console.error('Check answer error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during answer verification',
-      error: process.env.NODE_ENV === 'production' ? undefined : error.message
-    });
+    console.error('Error checking answer:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
