@@ -24,6 +24,10 @@ const app = express();
 
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("API is running....");
+});
+
 
 app.use(cors({
   origin: "https://globetrotter-frontend-puce.vercel.app/", // Replace with your frontend URL
