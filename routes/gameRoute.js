@@ -28,7 +28,7 @@ router.get('/questions', protect, async (req, res) => {
     const questionsWithoutAnswers = questions.map((question) => ({
       id: question._id,
       clues: question.clues, // Shuffle the clues array
-      options: suffledArray(question.options);
+      options: suffledArray(question.options)
     }));
 
     res.json(questionsWithoutAnswers);
