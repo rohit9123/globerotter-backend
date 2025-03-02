@@ -40,7 +40,7 @@ router.post('/check-answers', protect, async (req, res) => {
     
 
     // Fetch the question from the database using the provided ID
-    id = mongoose.Types.ObjectId(id);
+    id =new mongoose.Types.ObjectId(id);
     const question = await Question.findOne({ id });
 
     if (!question) {
