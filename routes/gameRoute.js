@@ -36,9 +36,11 @@ router.get('/questions', protect, async (req, res) => {
 // Route to check user answers
 router.post('/check-answers', protect, async (req, res) => {
   try {
-    const { id, answer } = req.body; // Single answer object: { id, answer }
+    let { id, answer } = req.body; // Single answer object: { id, answer }
+    
 
     // Fetch the question from the database using the provided ID
+    id = mongoose.Types.ObjectId(id);
     const question = await Question.findOne({ id });
 
     if (!question) {
