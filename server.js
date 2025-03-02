@@ -14,6 +14,7 @@ const connectDB = require("./config/db.js");
 const auth = require("./routes/authRoute.js");
 const gameRoute = require("./routes/gameRoute.js");
 const leaderboardRoutes = require("./routes/leaderboardRoute.js");
+const user = require('./routes/user.js')
 const cors = require("cors");
 
 dotenv.config();
@@ -46,7 +47,8 @@ app.use(
 
 app.use("/api/auth", auth);
 app.use('/api/game', gameRoute);
-// app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/user", user);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

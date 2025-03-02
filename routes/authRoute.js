@@ -55,17 +55,5 @@ router.post("/logout", (req, res) => {
   res.status(200).json({ message: "Logged out successfully" });
 });
 
-// Get Current User
-router.get("/me", (req, res) => {
-  try {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    res.json({ isAuthenticated: true, userId: decoded.userId });
-  } catch (error) {
-    res.status(401).json({ message: "Invalid token" });
-  }
-});
 
 module.exports = router;
