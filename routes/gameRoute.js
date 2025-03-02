@@ -11,6 +11,15 @@ const mongoose = require('mongoose');
 router.get('/questions', protect, async (req, res) => {
   try {
     // Fisher-Yates shuffle function
+    const suffledArray  = (array) => {
+      for(let i = array.length - 1; i > 0; i--){
+        let randomIndex = Math.floor(Math.random() * (i + 1));
+        let temp = array[i];
+        array[i] = array[randomIndex];
+        array[randomIndex] = temp;
+      }
+      return array;
+    }
     
     // Fetch 10 random questions
     const questions = await Question.aggregate([{ $sample: { size: 10 } }]);
@@ -19,7 +28,7 @@ router.get('/questions', protect, async (req, res) => {
     const questionsWithoutAnswers = questions.map((question) => ({
       id: question._id,
       clues: question.clues, // Shuffle the clues array
-      options: question.options
+      options: suffledArray(question.options);
     }));
 
     res.json(questionsWithoutAnswers);
