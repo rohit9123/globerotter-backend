@@ -24,7 +24,7 @@ app.use(express.json());
 
 
 app.use(cors({
-  origin: "http://localhost:3000", // Replace with your frontend URL
+  origin: "https://globetrotter-frontend-puce.vercel.app/", // Replace with your frontend URL
   credentials: true
 }));
 
@@ -43,6 +43,9 @@ app.use(
   })
 );
 
+app.get("/", (req, res) => {
+  res.send("API is running....");
+});
 app.use("/api/auth", auth);
 // app.use("/api/leaderboard", leaderboardRoutes);
 
