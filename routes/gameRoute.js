@@ -10,24 +10,34 @@ const mongoose = require('mongoose');
 
 router.get('/questions', protect, async (req, res) => {
   try {
+    // Fisher-Yates shuffle function
+    const shuffleArray = (array) => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
 
-    // Fetch 10 random questions from the database
-    console.log("fetching questions")
+    // Fetch 10 random questions
     const questions = await Question.aggregate([{ $sample: { size: 10 } }]);
 
-    // Remove the correct answer before sending to the frontend
-    const questionsWithoutAnswers = questions.map((question) => {
-      return {
-        id: question.id,
-        clues: question.clues,
-        options: question.options,
-      };
-    });
+    // Process questions with shuffled clues
+    const questionsWithoutAnswers = questions.map((question) => ({
+      id: question._id,
+      clues: shuffleArray(question.clues), // Shuffle the clues array
+      options: question.options
+    }));
 
     res.json(questionsWithoutAnswers);
+    
   } catch (error) {
     console.error('Error fetching questions:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      message: 'Error fetching questions',
+      error: error.message 
+    });
   }
 });
 
