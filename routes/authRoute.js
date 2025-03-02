@@ -24,7 +24,7 @@ router.post("/signup", async (req, res) => {
 
     const token = generateToken(res, newUser._id);
     console.log(newUser);
-    res.status(201).json({ message: "User registered successfully", user, token });
+    res.status(201).json({ message: "User registered successfully", user,token});
   } catch (error) {
     console.log(error.message)
     res.status(500).json({ message: error.message });
@@ -43,7 +43,7 @@ router.post("/login", async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Invalid email or password" });
 
     const token = generateToken(res, user._id);
-    res.status(200).json({ message: "Login successful", user: { username: user.username, email: user.email, _id: user._id }, token });
+    res.status(200).json({ message: "Login successful", user: { username: user.username, email: user.email, _id: user._id },token});
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
