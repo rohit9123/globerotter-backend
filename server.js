@@ -26,7 +26,7 @@ app.use(express.json());
 
 
 app.use(cors({
-  origin: "http://localhost:3000", // Replace with your frontend URL
+  origin: "https://globetrotter-frontend-puce.vercel.app/", // Replace with your frontend URL
   credentials: true
 }));
 
