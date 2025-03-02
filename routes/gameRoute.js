@@ -10,9 +10,9 @@ const mongoose = require('mongoose');
 
 router.get('/questions', protect, async (req, res) => {
   try {
-    // Fisher-Yates shuffle function
+    // Fisher-Yates shuffle function (pure function)
     const shuffleArray = (array) => {
-      const shuffled = [...array];
+      const shuffled = [...array]; // Create copy
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -20,23 +20,31 @@ router.get('/questions', protect, async (req, res) => {
       return shuffled;
     };
 
-    // Fetch 10 random questions
-    const questions = await Question.aggregate([{ $sample: { size: 10 } }]);
+    // Get 10 random questions without answers
+    const questions = await Question.aggregate([
+      { $sample: { size: 10 } },
+      { $project: { 
+        clues: 1,
+        options: 1,
+        _id: 1 
+      }}
+    ]);
 
-    // Process questions with shuffled clues
-    const questionsWithoutAnswers = questions.map((question) => ({
+    // Process questions without modifying database
+    const randomizedQuestions = questions.map(question => ({
       id: question._id,
-      clues: question.clues, // Shuffle the clues array
-      options: shuffleArray(question.options), // Shuffle the options array
+      clues: question.clues, // Shuffle clues copy
+      options: shuffleArray(question.options) // Shuffle options copy
     }));
 
-    res.json(questionsWithoutAnswers);
+    res.json(randomizedQuestions);
     
   } catch (error) {
     console.error('Error fetching questions:', error);
     res.status(500).json({ 
-      message: 'Error fetching questions',
-      error: error.message 
+      success: false,
+      message: 'Failed to load questions',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
