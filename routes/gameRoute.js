@@ -11,7 +11,7 @@ const mongoose = require('mongoose');
 router.get('/questions', protect, async (req, res) => {
   try {
     // ✅ Get the number of questions from query (default to 10 if not provided)
-    const noOfQuestions = parseInt(req.query.noofquestion) || 10;
+    const noOfQuestions =  10;
 
     // ✅ Shuffle helper function
     const shuffleArray = (array) => {
