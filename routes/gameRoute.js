@@ -10,39 +10,41 @@ const mongoose = require('mongoose');
 
 router.get('/questions', protect, async (req, res) => {
   try {
-    // get query
-    const query = req.query();
-    console.log(query); 
-    const suffledArray  = (array) => {
-      for(let i = array.length - 1; i > 0; i--){
-        let randomIndex = Math.floor(Math.random() * (i + 1));
-        let temp = array[i];
-        array[i] = array[randomIndex];
-        array[randomIndex] = temp;
+    // ✅ Get the number of questions from query (default to 10 if not provided)
+    const noOfQuestions = parseInt(req.query.noofquestion) || 10;
+
+    // ✅ Shuffle helper function
+    const shuffleArray = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const randomIndex = Math.floor(Math.random() * (i + 1));
+        [array[i], array[randomIndex]] = [array[randomIndex], array[i]];
       }
       return array;
-    }
-    
-    // Fetch 10 random questions
-    const questions = await Question.aggregate([{ $sample: { size: 10 } }]);
+    };
 
-    // Process questions with shuffled clues
+    // ✅ Use MongoDB $sample to get random questions
+    const questions = await Question.aggregate([
+      { $sample: { size: noOfQuestions } }
+    ]);
+
+    // ✅ Process questions with shuffled options (keep clues as-is or shuffle if needed)
     const questionsWithoutAnswers = questions.map((question) => ({
       id: question._id,
-      clues: question.clues, // Shuffle the clues array
-      options: suffledArray(question.options)
+      clues: question.clues, // Optional: shuffle clues too if needed
+      options: shuffleArray(question.options)
     }));
 
     res.json(questionsWithoutAnswers);
-    
+
   } catch (error) {
     console.error('Error fetching questions:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Error fetching questions',
-      error: error.message 
+      error: error.message
     });
   }
 });
+
 
 // Route to check user answers
 router.post('/check-answers', protect, async (req, res) => {
