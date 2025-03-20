@@ -10,7 +10,9 @@ const mongoose = require('mongoose');
 
 router.get('/questions', protect, async (req, res) => {
   try {
-    // Fisher-Yates shuffle function
+    // get query
+    const query = req.query();
+    console.log(query); 
     const suffledArray  = (array) => {
       for(let i = array.length - 1; i > 0; i--){
         let randomIndex = Math.floor(Math.random() * (i + 1));
